@@ -1,98 +1,16 @@
-dalgard:jade 0.5.4
+pacreach:jade 0.5.5
 ==================
 
-This package is a fork of [`mquandalle:jade`](https://github.com/mquandalle/meteor-jade) and will be kept in sync with the original.
+Jade compiler for Meteor with support for imports and local packages in Meteor 1.3 and up.
 
-Hopefully, the two packages can be merged at some point.
+This package is a fork of [`dalgard:jade`](https://github.com/dalgard/meteor-jade) with added updates from the master branch at [`mquandalle:jade`](https://github.com/mquandalle/meteor-jade). This fork uses the Meteor 1.2 build system, and hence works with imports and local packages.
+
+If you use `manuel:viewmodel` this fork is for you, supporting dynamic variables and attribute interpolation.
 
 #### Install
 
-`meteor add dalgard:jade`
+`meteor add pacreach:jade`
 
-#### Rationale
+#### Readme
 
-The latest development on the `mquandalle:jade` package was on 29 April 2015. Judging from the lack of responsiveness in the issues forum, it looks like the project have been set on stand-by.
-
-Until development is resumed, this package may improve things a bit in some areas (especially in relation to the [`dalgard:viewmodel`](https://github.com/dalgard/meteor-viewmodel/) package).
-
-A live version of `/examples/viewmodel` can be found [here](http://dalgard-jade.meteor.com/).
-
-
-## Changes
-
-Although only a few lines of code have been added to the package, they enable some useful features.
-
-Like the existing syntax, the new syntax comes in two variants – space separated or with parentheses. I recommend using the parenthesized version, since this is the only available style for attribute helpers.
-
-**Note:** The parenthesis format for helper arguments may also be used after includes, components, and built-ins (`if helper(args)`), as long as they don't span multiple lines.
-
-#### Arguments in interpolation
-
-Positional and keyword arguments have been missing from Jade's interpolation syntax, but may now be used in one of the two mentioned forms, alleviating the need for Blaze syntax:
-
-```jade
-body
-  // Space separated version – similar to Blaze
-  | Hello #{person name prefix='Lord'}
-
-  // Parenthesis version – similar to attribute helpers
-  | Hello #{person(name prefix='Lord')}
-```
-
-#### Arguments in attributes
-
-Positional and keyword arguments can be passed to helpers that are used in attributes:
-
-```jade
-input(type='text' placeholder=person(name prefix='Lord'))
-```
-
-#### Dollar sign attributes
-
-Dynamic attributes were added to the Meteor version of Jade using the `$dyn` syntax:
-
-```jade
-input(type='text' $dyn=bind('value: value'))
-```
-
-This package introduces the concept of using a dollar sign (`$`) in front of an attribute name as a shorthand for designating a dynamic attribute helper. These two examples are equivalent:
-
-```jade
-div($attr)
-```
-
-```html
-<div {{attr}}></div>
-```
-
-If a value is set on the attribute, it becomes the first positional argument of the helper. Consequently, the `$dyn` example may be rewritten in two ways:
-
-```jade
-input(type='text' $bind='value: value')
-```
-
-Or, when more arguments are needed:
-
-```jade
-input(type='text' $bind('value: value' throttle=500))
-```
-
-#### @index
-
-The special `@index` variable inside `each` loops may now be used in interpolation or as an argument to a helper.
-
-The only limitation is direct attribute assignment, which should be written as `attr='#{@index}'`, not as `attr=@index`.
-
-
-## Compatibility
-
-So far, I these improvements are fully backwards compatible, since the added syntax previously resulted in errors (with the exception of `$dyn`, which this package leaves untouched).
-
-
-## History
-
-- 0.5.4  –  Fixed missing @index variable and `Uncaught TypeError: Cannot read property 'nodeType' of undefined`
-- 0.5.3  –  Added tests and fixed corner case with parenthesis syntax
-- 0.5.2  –  Bug fix: Broken multiline component arguments.
-- 0.5.1  –  Extended parenthesis syntax to includes, components, and built-ins.
-- 0.5.0  –  Arguments for attributes and interpolation.
+Please see the [`mquandalle:jade`](https://github.com/mquandalle/meteor-jade) docs and then the changes in [`dalgard:jade`](https://github.com/dalgard/meteor-jade) as this package adds nothing else to them.
