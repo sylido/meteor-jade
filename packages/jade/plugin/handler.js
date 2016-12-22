@@ -1,110 +1,107 @@
-var path = Npm.require('path');
+const path = Npm.require('path');
 
-// XXX Handle body attributes
-var bodyGen = function (tpl, attrs) {
-  var res = "";
-  if (attrs !== {}) {
-    res += "\nMeteor.startup(function() { $('body').attr(";
-    res += JSON.stringify(attrs) + "); });\n";
-  }
-  res += "\nTemplate.body.addContent(";
-  res += SpacebarsCompiler.codeGen(tpl, {
-    isBody: true,
-    sourceName: "<body>"
-  });
-  res += ");\n";
-  res += "Meteor.startup(Template.body.renderToDocument);\n";
-  return res;
-};
-
-var templateGen = function (tree, tplName) {
-  var nameLiteral = JSON.stringify(tplName);
-  var templateDotNameLiteral = JSON.stringify("Template." + tplName);
-  var res = "";
-  res += "\nTemplate.__checkName(" + nameLiteral + ");";
-  res += "\nTemplate[" + nameLiteral + "] = new Template(";
-  res += templateDotNameLiteral + ", ";
-  res += SpacebarsCompiler.codeGen(tree, {
-    isTemplate: true,
-    sourceName: 'Template "' + tplName + '"'
-  });
-  res += ");\n";
-  return res;
-};
-
-var getCompilerResult = function (compileStep, fileMode) {
-  var content = compileStep.read().toString('utf8');
-  try {
-    return JadeCompiler.parse(content, {
-      filename: compileStep.inputPath,
-      fileMode: fileMode
-    });
-  } catch (err) {
-    return compileStep.error({
-      message: "Jade syntax error: " + err.message,
-      sourcePath: compileStep.inputPath
-    });
-  }
-};
-
-var fileModeHandler = function (compileStep) {
-  var results = getCompilerResult(compileStep, true);
-
-  // Head
-  if (results.head !== null) {
-    compileStep.appendDocument({
-      section: "head",
-      data: HTML.toHTML(results.head)
-    });
-  }
-
-  var jsContent = "";
-  if (results.body !== null) {
-    jsContent += bodyGen(results.body, results.bodyAttrs);
-  }
-  if (! _.isEmpty(results.templates)) {
-    jsContent += _.map(results.templates, templateGen).join("");
-  }
-
-  if (jsContent !== "") {
-    compileStep.addJavaScript({
-      path: compileStep.inputPath + '.js',
-      sourcePath: compileStep.inputPath,
-      data: jsContent
-    });
-  }
-};
-
-var templateModeHandler = function (compileStep) {
-  var result = getCompilerResult(compileStep, false);
-  var templateName = path.basename(compileStep.inputPath, '.tpl.jade');
-  var jsContent;
-
-  if (templateName === "head") {
-    compileStep.appendDocument({
-      section: "head",
-      data: HTML.toHTML(result)
-    });
-
-  } else {
-
-    if (templateName === "body")
-      jsContent = bodyGen(result);
-    else
-      jsContent = templateGen(result, templateName);
-
-    compileStep.addJavaScript({
-      path: compileStep.inputPath + '.js',
-      sourcePath: compileStep.inputPath,
-      data: jsContent
-    });
-  }
-};
-
-var pluginOptions = {
+Plugin.registerCompiler({
+  extensions: ['jade', 'tpl.jade'],
+  archMatching: 'web',
   isTemplate: true,
-  archMatching: "web"
-};
+}, () => new JadeCompilerPlugin());
 
-Plugin.registerSourceHandler("jade", pluginOptions, fileModeHandler);
-Plugin.registerSourceHandler("tpl.jade", pluginOptions, templateModeHandler);
+class JadeCompilerPlugin extends CachingHtmlCompiler {
+  constructor() {
+    super('jade');
+  }
+
+  compileOneFile(inputFile) {
+    const mode = this._getMode(inputFile);
+
+    try {
+      const compileResult = this._getCompilerResult(mode, inputFile);
+      return this[`_${mode}ModeHandler`](inputFile, compileResult);
+    } catch (err) {
+      inputFile.error({
+        message: "Jade syntax error: " + err.message
+      });
+    }
+  }
+
+  getCacheKey(inputFile) {
+    return [
+      inputFile.getSourceHash(),
+      inputFile.getBasename(),
+    ];
+  }
+
+  _getMode(file) {
+    const ext = file.getExtension();
+    return (ext === 'jade') ? 'file' : 'template';
+  }
+
+  // XXX Handle body attributes
+  _bodyGen(body) {
+    const renderFuncCode = SpacebarsCompiler.codeGen(body, {
+      isBody: true,
+      sourceName: "<body>"
+    });
+
+    return TemplatingTools.generateBodyJS(renderFuncCode);
+  }
+
+  _templateGen(tree, tplName) {
+    const renderFuncCode = SpacebarsCompiler.codeGen(tree, {
+      isTemplate: true,
+      sourceName: `Template "${tplName}"`
+    });
+
+    return TemplatingTools.generateTemplateJS(tplName, renderFuncCode);
+  }
+
+  _getCompilerResult(mode, file) {
+    try {
+      return JadeCompiler.parse(file.getContentsAsString(), {
+        filename: file.getPathInPackage(),
+        fileMode: mode === 'file'
+      });
+    } catch (err) {
+      return file.error({
+        message: "Jade syntax error: " + err.message,
+        sourcePath: file.getPathInPackage()
+      });
+    }
+  }
+
+  _fileModeHandler(file, results) {
+    let head = '', body = '', js = '', bodyAttrs = {};
+
+    if (results.head !== null) {
+      head = HTML.toHTML(results.head);
+    }
+
+    if (results.body !== null) {
+      js += this._bodyGen(results.body);
+    }
+    if (! _.isEmpty(results.templates)) {
+      js += _.map(results.templates, this._templateGen).join("");
+    }
+    if (! _.isEmpty(results.bodyAttrs)) {
+      bodyAttrs = results.bodyAttrs;
+    }
+
+    return { head, body, js, bodyAttrs };
+  }
+
+  _templateModeHandler(file, result) {
+    let head = '', body = '', js = '', bodyAttrs = {};
+
+    const templateName = path.basename(file.getPathInPackage(), '.tpl.jade');
+
+    if (templateName === "head") {
+      head = HTML.toHTML(result);
+    } else if (templateName === "body") {
+      js = this._bodyGen(result);
+    } else {
+      js = this._templateGen(result, templateName);
+    }
+
+    return { head, body, js, bodyAttrs };
+  }
+}
