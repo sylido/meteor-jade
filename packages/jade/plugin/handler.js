@@ -50,8 +50,12 @@ var getCompilerResult = function (compileStep, fileMode) {
 var fileModeHandler = function (compileStep) {
   var results = getCompilerResult(compileStep, true);
 
+  if (!results) {
+    return;
+  }
+
   // Head
-  if (results.head !== null && results) {
+  if (results.head !== null) {
     compileStep.appendDocument({
       section: "head",
       data: HTML.toHTML(results.head)
