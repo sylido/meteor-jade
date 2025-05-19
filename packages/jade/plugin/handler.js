@@ -1,14 +1,8 @@
-const path = Npm.require('path');
-
-Plugin.registerCompiler({
-  extensions: ['jade', 'tpl.jade'],
-  archMatching: 'web',
-  isTemplate: true,
-}, () => new JadeCompilerPlugin());
+const path = Npm.require("path");
 
 class JadeCompilerPlugin extends CachingHtmlCompiler {
   constructor() {
-    super('jade');
+    super("jade");
   }
 
   compileOneFile(inputFile) {
@@ -33,7 +27,7 @@ class JadeCompilerPlugin extends CachingHtmlCompiler {
 
   _getMode(file) {
     const ext = file.getExtension();
-    return (ext === 'jade') ? 'file' : 'template';
+    return ext === "jade" ? "file" : "template";
   }
 
   // XXX Handle body attributes
@@ -59,7 +53,7 @@ class JadeCompilerPlugin extends CachingHtmlCompiler {
     try {
       return JadeCompiler.parse(file.getContentsAsString(), {
         filename: file.getPathInPackage(),
-        fileMode: mode === 'file'
+        fileMode: mode === "file"
       });
     } catch (err) {
       return file.error({
@@ -70,7 +64,10 @@ class JadeCompilerPlugin extends CachingHtmlCompiler {
   }
 
   _fileModeHandler(file, results) {
-    let head = '', body = '', js = '', bodyAttrs = {};
+    let head      = "",
+        body      = "",
+        js        = "",
+        bodyAttrs = {};
 
     if (results.head !== null) {
       head = HTML.toHTML(results.head);
@@ -90,9 +87,12 @@ class JadeCompilerPlugin extends CachingHtmlCompiler {
   }
 
   _templateModeHandler(file, result) {
-    let head = '', body = '', js = '', bodyAttrs = {};
+    let head      = "",
+        body      = "",
+        js        = "",
+        bodyAttrs = {};
 
-    const templateName = path.basename(file.getPathInPackage(), '.tpl.jade');
+    const templateName = path.basename(file.getPathInPackage(), ".tpl.jade");
 
     if (templateName === "head") {
       head = HTML.toHTML(result);
@@ -105,3 +105,9 @@ class JadeCompilerPlugin extends CachingHtmlCompiler {
     return { head, body, js, bodyAttrs };
   }
 }
+
+Plugin.registerCompiler({
+  extensions   : ["jade", "tpl.jade"],
+  archMatching : "web",
+  isTemplate   : true
+}, () => new JadeCompilerPlugin());

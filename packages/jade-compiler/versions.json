@@ -2,7 +2,7 @@
   "dependencies": [
     [
       "blaze-tools",
-      "1.0.4"
+      "2.0.0"
     ],
     [
       "deps",
@@ -10,15 +10,15 @@
     ],
     [
       "html-tools",
-      "1.0.5"
+      "2.0.0"
     ],
     [
       "htmljs",
-      "1.0.5"
+      "2.0.1"
     ],
     [
       "meteor",
-      "1.2.0"
+      "3.2.2"
     ],
     [
       "minifiers",
@@ -26,18 +26,18 @@
     ],
     [
       "spacebars-compiler",
-      "1.0.7"
+      "2.0.0"
     ],
     [
       "tracker",
-      "1.0.9"
+      "1.3.4"
     ],
     [
       "underscore",
-      "1.0.4"
+      "1.6.4"
     ]
   ],
-  "pluginDependencies": [],
-  "toolVersion": "meteor-tool@1.0.35",
-  "format": "1.0"
+  "pluginDependencies" : [],
+  "toolVersion"        : "meteor-tool@3.2.0",
+  "format"             : "1.0"
 }
